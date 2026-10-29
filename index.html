@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>BrainrotLang Playground</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b0c12; --panel:#121520; --panel2:#171b29; --border:#282d40; --text:#eef0ff; --muted:#9aa2bd; --lime:#b7ff5b; --violet:#a78bfa; --pink:#ff79c6; --red:#ff7373; }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; background:radial-gradient(ellipse at 10% 0%,#20213d 0,transparent 40%),var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif; }
+    button,select,textarea { font:inherit }
+    button,select { border:1px solid var(--border); background:#1a1e2c; color:var(--text); border-radius:10px; padding:9px 12px; cursor:pointer; }
+    button:hover { border-color:#626b8c; transform:translateY(-1px) }
+    button:focus-visible,select:focus-visible,textarea:focus-visible { outline:2px solid var(--lime); outline-offset:2px }
+    .shell { max-width:1440px; margin:auto; padding:22px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+    .brand { display:flex; align-items:center; gap:12px }
+    .logo { width:44px; height:44px; border-radius:14px; display:grid; place-items:center; background:linear-gradient(135deg,var(--lime),#77e4bd); color:#111; font-size:23px; box-shadow:0 0 28px #b7ff5b22; }
+    h1 { margin:0; font-size:clamp(20px,3vw,28px); letter-spacing:-.8px }
+    .subtitle { color:var(--muted); font-size:12px }
+    .header-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+    .run { background:var(--lime); color:#10140b; border-color:var(--lime); font-weight:800; padding:10px 18px }
+    .run:hover { background:#caff8a }
+    .pill { color:var(--lime); border:1px solid #3a4c2c; background:#192216; padding:4px 9px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.4px }
+    .workspace { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(290px,.85fr); gap:16px; align-items:stretch }
+    .panel { background:linear-gradient(180deg,#151927,#11141e); border:1px solid var(--border); border-radius:16px; overflow:hidden; min-width:0; box-shadow:0 10px 35px #0002; }
+    .panel-head { min-height:50px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); background:#ffffff03; }
+    .panel-title { display:flex; align-items:center; gap:8px; font-weight:750 }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--lime); box-shadow:0 0 12px #b7ff5b77 }
+    .file { color:var(--muted); font-size:12px; font-family:ui-monospace,SFMono-Regular,Consolas,monospace }
+    .editor-wrap { display:grid; grid-template-columns:42px minmax(0,1fr); min-height:430px; }
+    .lines { margin:0; padding:17px 10px 17px 0; text-align:right; color:#606984; background:#0d1018; border-right:1px solid #22283a; font:13px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace; user-select:none; white-space:pre; overflow:hidden }
+    textarea { width:100%; min-height:430px; resize:vertical; border:0; border-radius:0; outline:none; padding:17px; color:#e4e8ff; background:#0d1018; font:13px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace; tab-size:2; white-space:pre; overflow:auto; }
+    textarea:focus-visible { outline:0; box-shadow:inset 0 0 0 1px #b7ff5b55 }
+    .editor-foot { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:9px 14px; border-top:1px solid var(--border); color:var(--muted); font-size:11px; }
+    .right-stack { display:grid; grid-template-rows:minmax(210px,1fr) auto; gap:16px; min-width:0; }
+    .console { min-height:210px; padding:14px; font:13px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .console-placeholder { color:#737c98 }
+    .output-line { color:#dce5ff }
+    .error-line { color:var(--red) }
+    .success-line { color:var(--lime) }
+    .ref-content { padding:14px; color:#bdc4dd; font-size:12px }
+    .ref-content p { margin:0 0 10px }
+    code { color:var(--lime); background:#222a27; padding:2px 5px; border-radius:5px; font:12px ui-monospace,SFMono-Regular,Consolas,monospace }
+    .examples { display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+    .examples select { max-width:210px; }
+    .status { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px }
+    .status-dot { width:7px; height:7px; border-radius:50%; background:#7d86a2 }
+    .status-dot.ok { background:var(--lime) }
+    .status-dot.bad { background:var(--red) }
+    .bottom-note { margin:17px 2px 0; color:#777f9b; font-size:11px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap }
+    @media (max-width:850px) { .shell{padding:14px} .workspace{grid-template-columns:1fr} .right-stack{grid-template-rows:auto auto} .editor-wrap,textarea{min-height:350px} }
+    @media (max-width:480px) { .shell{padding:10px} .header-actions{width:100%} .header-actions button{flex:1} .panel-head{padding:9px 11px} .editor-wrap{grid-template-columns:32px minmax(0,1fr)} .lines{font-size:12px;padding-right:7px} textarea{padding:13px;font-size:12px;min-height:320px} .examples select{max-width:100%;flex:1} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🧠</div>
+        <div>
+          <h1>BrainrotLang <span style="color:var(--lime)">Playground</span></h1>
+          <div class="subtitle">compile? nah. vibe? absolutely. · v0.1.0</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="pill">NO CAP · REAL INTERPRETER</span>
+        <button id="resetBtn" type="button" title="Restore the starter program">Reset</button>
+        <button id="copyBtn" type="button">Copy code</button>
+        <button id="runBtn" class="run" type="button">▶ Run it</button>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="BrainrotLang coding playground">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot"></span> Code editor <span class="file">main.brainrot</span></div>
+          <div class="examples">
+            <label for="exampleSelect" class="subtitle">Load:</label>
+            <select id="exampleSelect" aria-label="Load example">
+              <option value="starter">Starter pack</option>
+              <option value="loop">Certified yapper loop</option>
+              <option value="math">Big brain math</option>
+              <option value="condition">No cap / cap check</option>
+            </select>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <pre id="lineNumbers" class="lines" aria-hidden="true">1</pre>
+          <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="BrainrotLang source code"></textarea>
+        </div>
+        <div class="editor-foot"><span>⌘/Ctrl + Enter to run</span><span id="charCount">0 chars</span><span>Runs locally in your browser</span></div>
+      </section>
+
+      <div class="right-stack">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">💬 Output console</div>
+            <div class="status"><span id="statusDot" class="status-dot"></span><span id="statusText">Waiting for your aura…</span></div>
+          </div>
+          <div id="console" class="console" role="log" aria-live="polite"><span class="console-placeholder">Your output will spawn here. Press “Run it” to cook. 🍳</span></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div class="panel-title">📚 Tiny language guide</div><span class="pill">SYNTAX</span></div>
+          <div class="ref-content">
+            <p><code>vibe "Hello world"</code> — print a message.</p>
+            <p><code>bro score = 100</code> — create a variable.</p>
+            <p><code>flex score + 50</code> — evaluate and print an expression.</p>
+            <p><code>if (score &gt;= 100) { ... }</code> — run code when true.</p>
+            <p><code>repeat 3 { ... }</code> — repeat a block (max 100 times).</p>
+            <p><code>// comment</code> — ignore this line.</p>
+            <p style="margin-bottom:0;color:#858eaa">Supported: numbers, strings, booleans, math, comparisons, variables, if/else, repeat. No JavaScript eval. No cooked CPU. 🫡</p>
+          </div>
+        </section>
+      </div>
+    </section>
+    <div class="bottom-note"><span>Built for the chronically online.</span><span>Safe-by-design MVP · no network calls · no dependencies</span></div>
+  </main>
+
+<script>
+(() => {
+  "use strict";
+  const STARTER = `// Welcome to BrainrotLang 😭
+vibe "Welcome to the function, chat."
+bro aura = 100
+bro sideQuest = 25
+flex aura + sideQuest
+
+if (aura >= 100) {
+  vibe "Aura status: UNMATCHED 🔥"
+} else {
+  vibe "It's so over."
+}
+
+repeat 3 {
+  vibe "We are so back."
+}`;
+  const EXAMPLES = {
+    starter: STARTER,
+    loop: `// The certified yapper loop
+bro yaps = 0
+repeat 5 {
+  vibe "YAP YAP YAP 🗣️"
+  bro yaps = yaps + 1
+}
+flex yaps`,
+    math: `// Big brain, tiny syntax
+bro base = 12
+bro multiplier = 8
+bro total = base * multiplier + 4
+vibe "The final score is:"
+flex total
+flex (total / 2) ** 2`,
+    condition: `// Is the vibe immaculate?
+bro vibeCheck = true
+bro cringe = 3
+if (vibeCheck == true && cringe < 5) {
+  vibe "NO CAP. Certified immaculate. 💯"
+} else {
+  vibe "Major skill issue."
+}`
+  };
+
+  const editor = document.getElementById("editor");
+  const lineNumbers = document.getElementById("lineNumbers");
+  const consoleEl = document.getElementById("console");
+  const runBtn = document.getElementById("runBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const copyBtn = document.getElementById("copyBtn");
+  const exampleSelect = document.getElementById("exampleSelect");
+  const statusText = document.getElementById("statusText");
+  const statusDot = document.getElementById("statusDot");
+  const charCount = document.getElementById("charCount");
+
+  editor.value = STARTER;
+
+  function updateEditorMeta() {
+    const count = editor.value.split("\n").length;
+    lineNumbers.textContent = Array.from({length: count}, (_, i) => i + 1).join("\n");
+    charCount.textContent = `${editor.value.length.toLocaleString()} chars`;
+    lineNumbers.scrollTop = editor.scrollTop;
+  }
+  editor.addEventListener("input", updateEditorMeta);
+  editor.addEventListener("scroll", () => { lineNumbers.scrollTop = editor.scrollTop; });
+  updateEditorMeta();
+
+  function setStatus(text, kind) {
+    statusText.textContent = text;
+    statusDot.className = "status-dot" + (kind ? " " + kind : "");
+  }
+  function renderConsole(lines, failed) {
+    consoleEl.replaceChildren();
+    if (!lines.length) {
+      const span = document.createElement("span");
+      span.className = "console-placeholder";
+      span.textContent = "Program ran. Absolutely zero yap. 🤐";
+      consoleEl.append(span);
+      return;
+    }
+    for (const line of lines) {
+      const span = document.createElement("div");
+      span.className = line.type === "error" ? "error-line" : line.type === "success" ? "success-line" : "output-line";
+      span.textContent = line.text;
+      consoleEl.append(span);
+    }
+  }
+
+  class LangError extends Error {
+    constructor(message, token) {
+      super(message);
+      this.name = "BrainrotError";
+      this.line = token?.line ?? 1;
+      this.column = token?.column ?? 1;
+    }
+  }
+
+  function tokenize(source) {
+    const tokens = [];
+    let i = 0, line = 1, column = 1;
+    const push = (type, value, startLine, startColumn) => tokens.push({type, value, line:startLine, column:startColumn});
+    while (i < source.length) {
+      const ch = source[i];
+      if (ch === " " || ch === "\t" || ch === "\r") { i++; column++; continue; }
+      if (ch === "\n") { push("NEWLINE", "\n", line, column); i++; line++; column = 1; continue; }
+      if (ch === "/" && source[i+1] === "/") {
+        while (i < source.length && source[i] !== "\\n") { i++; column++; }
+        continue;
+      }
+      const startLine = line, startColumn = column;
+      if (ch === '"' || ch === "'") {
+        const quote = ch; i++; column++; let value = "", closed = false;
+        while (i < source.length) {
+          const c = source[i];
+          if (c === "\n") throw new LangError("String literals can't cross lines. Close the quote and try again.", {line,column});
+          if (c === quote) { i++; column++; closed = true; break; }
+          if (c === "\\") {
+            const next = source[i+1];
+            if (next === undefined) break;
+            const escapes = {"n":"\n","t":"\t","r":"\r","\\":"\\",'"':'"',"'":"'"};
+            value += Object.prototype.hasOwnProperty.call(escapes,next) ? escapes[next] : next;
+            i += 2; column += 2; continue;
+          }
+          value += c; i++; column++;
+        }
+        if (!closed) throw new LangError("Unclosed string. The quote is still waiting for its soulmate.", {line:startLine,column:startColumn});
+        push("STRING", value, startLine, startColumn); continue;
+      }
+      const number = source.slice(i).match(/^(?:\\d+\\.\\d+|\\d+|\\.\\d+)/);
+      if (number) {
+        const raw = number[0]; push("NUMBER", Number(raw), line, column);
+        i += raw.length; column += raw.length; continue;
+      }
+      const identifier = source.slice(i).match(/^[A-Za-z_][A-Za-z0-9_]*/);
+      if (identifier) {
+        const raw = identifier[0]; push("IDENT", raw, line, column);
+        i += raw.length; column += raw.length; continue;
+      }
+      const op = ["==","!=","<=",">=","&&","||","**"].find(candidate => source.startsWith(candidate,i));
+      if (op) { push("OP",op,line,column); i += op.length; column += op.length; continue; }
+      if ("+-*/%<>=!(){};".includes(ch)) { push("OP",ch,line,column); i++; column++; continue; }
+      throw new LangError(`Unknown character "${ch}". This syntax has negative rizz.`, {line,column});
+    }
+    tokens.push({type:"EOF", value:"", line, column});
+    return tokens;
+  }
+
+  const KEYWORDS = new Set(["vibe","bro","rizz","flex","if","else","repeat","true","false"]);
+  class Parser {
+    constructor(tokens) { this.tokens = tokens; this.pos = 0; this.depth = 0; }
+    current() { return this.tokens[this.pos]; }
+    at(value) { return this.current().value === value; }
+    take() { return this.tokens[this.pos++]; }
+    match(value) { if (this.at(value)) { this.take(); return true; } return false; }
+    skipSeparators() { while (this.current().type === "NEWLINE" || this.match(";")) {} }
+    expect(value, message) { if (!this.match(value)) throw new LangError(message || `Expected "${value}". The parser is confused, fr.`, this.current()); }
+    identifier(message) {
+      const token = this.current();
+      if (token.type !== "IDENT" || KEYWORDS.has(token.value)) throw new LangError(message || "Expected a variable name, not this chaos.", token);
+      this.take(); return token;
+    }
+    parse() {
+      const body = this.statements(false);
+      if (this.current().type !== "EOF") throw new LangError("Unexpected token after the program.", this.current());
+      return body;
+    }
+    statements(inBlock) {
+      const body = [];
+      while (this.current().type !== "EOF" && !(inBlock && this.at("}"))) {
+        this.skipSeparators();
+        if (this.current().type === "EOF" || (inBlock && this.at("}"))) break;
+        body.push(this.statement());
+        if (body.length > 2000) throw new LangError("Too many statements. Bro is writing a whole trilogy.", this.current());
+        if (this.current().type !== "NEWLINE" && this.current().type !== "EOF" && !this.at("}") && !this.at(";")) {
+          throw new LangError("Put each statement on a new line, or separate it with a semicolon.", this.current());
+        }
+      }
+      if (inBlock) this.expect("}", "Expected } to close this block. Bracket has left the chat.");
+      return body;
+    }
+    block() {
+      this.expect("{", 'Expected "{" to start the block.');
+      if (++this.depth > 20) throw new LangError("Block nesting is too deep. Touch grass and simplify it.", this.current());
+      const result = this.statements(true); this.depth--; return result;
+    }
+    statement() {
+      const token = this.current();
+      if (this.match("vibe")) return {kind:"print", expr:this.expression(), token};
+      if (this.match("flex")) return {kind:"print", expr:this.expression(), token};
+      if (this.match("bro") || this.match("rizz")) {
+        const name = this.identifier("After bro/rizz, give the variable a name.");
+        this.expect("=", 'Variable declarations need "=". No equals, no peace.');
+        return {kind:"declare", name:name.value, expr:this.expression(), token};
+      }
+      if (this.match("if")) {
+        this.match("(");
+        const test = this.expression();
+        if (this.tokens[this.pos-1]?.value === ")") {} else this.match(")");
+        const consequent = this.block();
+        this.skipSeparators();
+        const alternate = this.match("else") ? this.block() : null;
+        return {kind:"if", test, consequent, alternate, token};
+      }
+      if (this.match("repeat")) {
+        const count = this.expression();
+        const body = this.block();
+        return {kind:"repeat", count, body, token};
+      }
+      if (token.type === "IDENT" && !KEYWORDS.has(token.value) && this.tokens[this.pos+1]?.value === "=") {
+        this.take(); this.take();
+        return {kind:"assign", name:token.value, expr:this.expression(), token};
+      }
+      throw new LangError(`Unexpected "${token.value}". Try vibe, bro, flex, if, or repeat.`, token);
+    }
+    expression(minPrec=0) {
+      let left;
+      const token = this.take();
+      if (token.type === "NUMBER" || token.type === "STRING") left = {kind:"literal", value:token.value, token};
+      else if (token.type === "IDENT" && (token.value === "true" || token.value === "false")) left = {kind:"literal", value:token.value === "true", token};
+      else if (token.type === "IDENT" && !KEYWORDS.has(token.value)) left = {kind:"variable", name:token.value, token};
+      else if (token.value === "(") {
+        left = this.expression(); this.expect(")", 'Expected ")" to close the expression.');
+      } else if (["-","+","!"].includes(token.value)) {
+        left = {kind:"unary", op:token.value, right:this.expression(7), token};
+      } else throw new LangError("Expected a number, string, variable, or parenthesized expression.", token);
+
+      const precedence = {"||":1,"&&":2,"==":3,"!=":3,"<":4,"<=":4,">":4,">=":4,"+":5,"-":5,"*":6,"/":6,"%":6,"**":7};
+      while (this.current().type === "OP" && precedence[this.current().value] !== undefined && precedence[this.current().value] >= minPrec) {
+        const opToken = this.take(), op = opToken.value, prec = precedence[op];
+        const right = this.expression(prec + (op === "**" ? 0 : 1));
+        left = {kind:"binary", op, left, right, token:opToken};
+      }
+      return left;
+    }
+  }
+
+  function stringify(value) {
+    if (typeof value === "string") return value;
+    if (typeof value === "boolean") return value ? "true" : "false";
+    if (value === null) return "null";
+    if (typeof value === "number" && !Number.isFinite(value)) return "NaN";
+    return String(value);
+  }
+  function evaluate(node, env) {
+    switch (node.kind) {
+      case "literal": return node.value;
+      case "variable":
+        if (!env.has(node.name)) throw new LangError(`"${node.name}" doesn't exist yet. Declare it with bro first.`, node.token);
+        return env.get(node.name);
+      case "unary": {
+        const v = evaluate(node.right,env);
+        if (node.op === "!") return !v;
+        if (typeof v !== "number") throw new LangError(`"${node.op}" needs a number.`, node.token);
+        return node.op === "-" ? -v : v;
+      }
+      case "binary": {
+        const a = evaluate(node.left,env);
+        if (node.op === "&&") return Boolean(a) && Boolean(evaluate(node.right,env));
+        if (node.op === "||") return Boolean(a) || Boolean(evaluate(node.right,env));
+        const b = evaluate(node.right,env);
+        if (node.op === "+" && (typeof a === "string" || typeof b === "string")) return stringify(a) + stringify(b);
+        if (["==","!="].includes(node.op)) return node.op === "==" ? a === b : a !== b;
+        if (["<","<=",">",">="].includes(node.op)) {
+          if (typeof a !== typeof b || !["number","string"].includes(typeof a)) throw new LangError("Comparisons need two numbers or two strings of the same type.", node.token);
+          return node.op === "<" ? a < b : node.op === "<=" ? a <= b : node.op === ">" ? a > b : a >= b;
+        }
+        if (typeof a !== "number" || typeof b !== "number") throw new LangError(`"${node.op}" only works with numbers (except string + string).`, node.token);
+        switch(node.op) {
+          case "+": return a+b; case "-": return a-b; case "*": return a*b;
+          case "/": if (b === 0) throw new LangError("Division by zero. Math has left the chat.", node.token); return a/b;
+          case "%": if (b === 0) throw new LangError("Modulo by zero. Absolutely not.", node.token); return a%b;
+          case "**": if (Math.abs(b) > 100 || Math.abs(a) > 1e100) throw new LangError("Exponent too powerful. Nerf that number.", node.token); return a**b;
+        }
+      }
+    }
+    throw new LangError("Unknown expression. The AST is in shambles.", node.token);
+  }
+
+  function interpret(source) {
+    if (source.length > 20000) throw new LangError("Code limit is 20,000 characters. This is a playground, not the Library of Babel.", {line:1,column:1});
+    const tokens = tokenize(source);
+    const ast = new Parser(tokens).parse();
+    const env = new Map();
+    const output = [];
+    let steps = 0;
+    const MAX_STEPS = 10000;
+    function execute(statements) {
+      for (const statement of statements) {
+        if (++steps > MAX_STEPS) throw new LangError("Execution limit hit (10,000 steps). The program is doing too much yapping.", statement.token);
+        switch(statement.kind) {
+          case "print": output.push({type:"output",text:stringify(evaluate(statement.expr,env))}); break;
+          case "declare": env.set(statement.name,evaluate(statement.expr,env)); break;
+          case "assign":
+            if (!env.has(statement.name)) throw new LangError(`"${statement.name}" doesn't exist. Use bro to create it first.`, statement.token);
+            env.set(statement.name,evaluate(statement.expr,env)); break;
+          case "if":
+            if (evaluate(statement.test,env)) execute(statement.consequent);
+            else if (statement.alternate) execute(statement.alternate);
+            break;
+          case "repeat": {
+            const count = evaluate(statement.count,env);
+            if (typeof count !== "number" || !Number.isInteger(count) || count < 0 || count > 100) throw new LangError("repeat needs a whole number from 0 to 100.", statement.token);
+            for (let i=0;i<count;i++) execute(statement.body);
+            break;
+          }
+        }
+      }
+    }
+    execute(ast);
+    return output;
+  }
+
+  function run() {
+    setStatus("Cooking…", "");
+    try {
+      const output = interpret(editor.value);
+      if (!output.length) output.push({type:"success",text:"Program ran successfully. Zero output, maximum mystery. 🫡"});
+      renderConsole(output, false);
+      setStatus("Cooked successfully", "ok");
+    } catch (error) {
+      const line = Number.isInteger(error.line) ? error.line : 1;
+      const column = Number.isInteger(error.column) ? error.column : 1;
+      renderConsole([{type:"error",text:`💀 ${error.name === "BrainrotError" ? "Syntax/runtime error" : "Unexpected error"} at ${line}:${column}\n${error.message}`}], true);
+      setStatus("Skill issue detected", "bad");
+    }
+  }
+  runBtn.addEventListener("click", run);
+  resetBtn.addEventListener("click", () => { editor.value = STARTER; exampleSelect.value = "starter"; updateEditorMeta(); renderConsole([]); setStatus("Starter pack restored", ""); editor.focus(); });
+  copyBtn.addEventListener("click", async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(editor.value);
+      else {
+        editor.focus(); editor.select();
+        const ok = document.execCommand("copy");
+        editor.setSelectionRange(editor.value.length, editor.value.length);
+        if (!ok) throw new Error("Copy unavailable");
+      }
+      const old = copyBtn.textContent; copyBtn.textContent = "Copied ✓";
+      setTimeout(() => { copyBtn.textContent = "Copy code"; }, 1300);
+    } catch {
+      setStatus("Copy blocked by browser", "bad");
+    }
+  });
+  exampleSelect.addEventListener("change", () => { editor.value = EXAMPLES[exampleSelect.value] || STARTER; updateEditorMeta(); editor.focus(); });
+  editor.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); run(); }
+    if (event.key === "Tab") {
+      event.preventDefault();
+      const start = editor.selectionStart, end = editor.selectionEnd;
+      editor.setRangeText("  ", start, end, "end"); updateEditorMeta();
+    }
+  });
+  run();
+})();
+</script>
+</body>
+</html>
